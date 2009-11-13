@@ -24,6 +24,10 @@ class AssetServerTest < Test::Unit::TestCase
     map "/javascripts/all_plugins.js" do
       run Assets::BundleServer.new("#{FIXTURE_PATH}/javascripts/*.js", "#{File.dirname(__FILE__)}/fixtures/plugins/**/javascripts/*.js")
     end
+
+    map "/javascripts/none.js" do
+      run Assets::BundleServer.new("#{FIXTURE_PATH}/stylesheets/*.js")
+    end
   }
 
   def test_serves_javascript_assets_from_directory
@@ -86,6 +90,11 @@ class AssetServerTest < Test::Unit::TestCase
 
     response = Rack::MockRequest.new(App).get("/javascripts/all.js?#{etag[1..-2]}")
     assert_match %r{max-age}, response.headers["Cache-Control"]
+  end
+  
+  def test_server_with_no_sources
+    response = Rack::MockRequest.new(App).get("/javascripts/none.js")
+    assert_equal 404, response.status
   end
   
   private

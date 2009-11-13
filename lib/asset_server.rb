@@ -17,6 +17,8 @@ module Assets
     end
 
     def call(env)
+      return not_found_response if @sources.empty?
+      
       rebundle if source_changed?
 
       if not_modified?(env) || etag_match?(env)
@@ -39,6 +41,10 @@ module Assets
         @previous_last_modified = last_modified_source
       end
 
+
+      def not_found_response
+        [ 404, { "Content-Type" => "text/plain", "Content-Length" => "9" }, [ "Not found" ] ]
+      end
 
       def not_modified?(env)
         env["HTTP_IF_MODIFIED_SINCE"] == @previous_last_modified.httpdate
