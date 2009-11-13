@@ -1,0 +1,1 @@
+var foo_plugin;

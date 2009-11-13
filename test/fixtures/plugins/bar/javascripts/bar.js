@@ -1,0 +1,1 @@
+var bar_plugin;
