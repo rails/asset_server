@@ -8,8 +8,6 @@ require 'time'
 
 module Assets
   class BundleServer
-    YEAR_IN_SECONDS = 31540000
-    
     def initialize(*paths)
       @sources = paths.map { |path| Dir[path] }.flatten
     end
@@ -30,12 +28,14 @@ module Assets
 
     private
       def source_changed?
-        true
+        @previous_last_modified.nil? ||
+          (@previous_last_modified < last_modified_source)
       end
 
       def rebundle
         @source                 = concate_source
-        @etag                   = compute_quoted_md5
+        @md5                    = compute_md5
+        @etag                   = quoted_md5
         @previous_last_modified = last_modified_source
       end
 
@@ -66,8 +66,8 @@ module Assets
           headers["Last-Modified"]  = @previous_last_modified.httpdate
           headers["ETag"]           = @etag
 
-          if env["QUERY_STRING"] == self.md5
-            headers["Cache-Control"] << ", max-age=#{YEAR_IN_SECONDS}"
+          if env["QUERY_STRING"] == @md5
+            headers["Cache-Control"] << ", max-age=#{1.year.to_i}"
           end
         end
       end
@@ -76,8 +76,12 @@ module Assets
         @sources.collect { |file| File.read(file) }.join("\n\n")        
       end
       
-      def compute_quoted_md5
-        %("#{Digest::MD5.hexdigest(@source)}")
+      def compute_md5
+        Digest::MD5.hexdigest(@source)
+      end    
+
+      def quoted_md5
+        %("#{@md5}")
       end    
   end
 end

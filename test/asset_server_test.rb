@@ -2,6 +2,8 @@ require 'rubygems'
 require 'active_support'
 require 'active_support/test_case'
 
+require 'mocha'
+
 require 'rack'
 require 'asset_server'
 
@@ -72,8 +74,18 @@ class AssetServerTest < Test::Unit::TestCase
     assert_equal 304, response.status
   end
   
+  def test_if_sources_didnt_change_the_server_shouldnt_rebundle
+    Rack::MockRequest.new(App).get("/javascripts/all.js")
+    Assets::BundleServer.any_instance.expects(:rebundle).never
+    Rack::MockRequest.new(App).get("/javascripts/all.js")
+  end
+  
   def test_query_string_md5_sets_expiration_to_the_future
-    flunk
+    response = Rack::MockRequest.new(App).get("/javascripts/all.js")
+    etag = response.headers["ETag"]
+
+    response = Rack::MockRequest.new(App).get("/javascripts/all.js?#{etag[1..-2]}")
+    assert_match %r{max-age}, response.headers["Cache-Control"]
   end
   
   private
