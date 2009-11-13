@@ -4,10 +4,18 @@ AssetServer
 Introduction goes here.
 
 
-Example
-=======
 
-Example goes here.
+Todo
+====
+
+* Manifest (w/ conventions)
+* Pipeline processing with ActionView
+* Hook in sprockets to the pipeline
+* Add compression engines as a middleware
+* Add a directory server
+* Move to ConcatenationServer < BundleServer
+* Add SpriteServer < BundleServer
+* rake assets:compile
 
 
 Copyright (c) 2009 [name of plugin creator], released under the MIT license

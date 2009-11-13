@@ -1,11 +1,6 @@
 require 'digest/md5'
 require 'time'
 
-# match "/stylesheets/all.js", :to => Assets::Server.new("#{Rails.root}/app/assets/stylesheets/**/*")
-# match "/javascript", :to => Assets::Server.new("#{Rails.root}/app/assets/javascript")
-# match "/images", :to => Assets::Server.new("#{Rails.root}/app/assets/images")
-
-
 module Assets
   class BundleServer
     def initialize(*paths)
