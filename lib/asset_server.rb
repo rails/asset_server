@@ -13,7 +13,7 @@ module Assets
 
     def call(env)
       return not_found_response if @sources.empty?
-      
+
       rebundle if source_changed?
 
       if not_modified?(env) || etag_match?(env)
@@ -44,7 +44,7 @@ module Assets
       def not_modified?(env)
         env["HTTP_IF_MODIFIED_SINCE"] == @previous_last_modified.httpdate
       end
-      
+
       def etag_match?(env)
         env["HTTP_IF_NONE_MATCH"] == @etag
       end
@@ -52,12 +52,12 @@ module Assets
       def not_modified_response(env)
         [ 304, headers(env), [] ]
       end
-      
+
       def ok_response(env)
         [ 200, headers(env), [@source] ]
       end
 
-      
+
       def headers(env)
         Hash.new.tap do |headers|
           headers["Content-Type"]   = "text/javascript"
@@ -72,17 +72,17 @@ module Assets
           end
         end
       end
-    
+
       def concate_source
-        @sources.collect { |file| File.read(file) }.join("\n\n")        
+        @sources.collect { |file| File.read(file) }.join("\n\n")
       end
-      
+
       def compute_md5
         Digest::MD5.hexdigest(@source)
-      end    
+      end
 
       def quoted_md5
         %("#{@md5}")
-      end    
+      end
   end
 end
