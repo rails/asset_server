@@ -40,27 +40,48 @@ module Assets
 
     def initialize(*paths)
       @sources = paths.map { |path| Dir[path] }.flatten
+      @lock = Mutex.new
     end
 
     def call(env)
       return not_found_response if @sources.empty?
 
-      rebundle if source_changed?
+      asset = rebundle(env)
 
-      if not_modified?(env) || etag_match?(env)
-        not_modified_response(env)
+      if not_modified?(asset, env) || etag_match?(asset, env)
+        not_modified_response(asset, env)
       else
-        ok_response(env)
+        ok_response(asset, env)
       end
     end
 
     private
-      def source_changed?
-        @asset.nil? || @asset.stale?
+      def source_changed?(asset)
+        asset.nil? || asset.stale?
       end
 
-      def rebundle
-        @asset = Asset.new(@sources)
+      def rebundle(env)
+        if env["rack.multithread"]
+          synchronized_rebundle
+        else
+          rebundle!
+        end
+      end
+
+      def synchronized_rebundle
+        asset = @asset
+        if source_changed?(asset)
+          @lock.synchronize { rebundle! }
+        else
+          asset
+        end
+      end
+
+      def rebundle!
+        if source_changed?(@asset)
+          @asset = Asset.new(@sources)
+        end
+        @asset
       end
 
 
@@ -68,32 +89,32 @@ module Assets
         [ 404, { "Content-Type" => "text/plain", "Content-Length" => "9" }, [ "Not found" ] ]
       end
 
-      def not_modified?(env)
-        env["HTTP_IF_MODIFIED_SINCE"] == @asset.created_at.httpdate
+      def not_modified?(asset, env)
+        env["HTTP_IF_MODIFIED_SINCE"] == asset.created_at.httpdate
       end
 
-      def etag_match?(env)
-        env["HTTP_IF_NONE_MATCH"] == @asset.etag
+      def etag_match?(asset, env)
+        env["HTTP_IF_NONE_MATCH"] == asset.etag
       end
 
-      def not_modified_response(env)
-        [ 304, headers(env), [] ]
+      def not_modified_response(asset, env)
+        [ 304, headers(asset, env), [] ]
       end
 
-      def ok_response(env)
-        [ 200, headers(env), [@asset.source] ]
+      def ok_response(asset, env)
+        [ 200, headers(asset, env), [asset.source] ]
       end
 
-      def headers(env)
+      def headers(asset, env)
         Hash.new.tap do |headers|
           headers["Content-Type"]   = "text/javascript"
-          headers["Content-Length"] = @asset.source.size.to_s
+          headers["Content-Length"] = asset.source.size.to_s
 
           headers["Cache-Control"]  = "public, must-revalidate"
-          headers["Last-Modified"]  = @asset.created_at.httpdate
-          headers["ETag"]           = @asset.etag
+          headers["Last-Modified"]  = asset.created_at.httpdate
+          headers["ETag"]           = asset.etag
 
-          if env["QUERY_STRING"] == @asset.md5
+          if env["QUERY_STRING"] == asset.md5
             headers["Cache-Control"] << ", max-age=#{1.year.to_i}"
           end
         end

@@ -80,7 +80,7 @@ class AssetServerTest < Test::Unit::TestCase
 
   def test_if_sources_didnt_change_the_server_shouldnt_rebundle
     Rack::MockRequest.new(App).get("/javascripts/all.js")
-    Assets::BundleServer.any_instance.expects(:rebundle).never
+    Assets::BundleServer::Asset.any_instance.expects(:new).never
     Rack::MockRequest.new(App).get("/javascripts/all.js")
   end
 
