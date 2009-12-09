@@ -4,9 +4,6 @@ desc 'Default: run unit tests.'
 task :default => :test
 
 desc 'Test the asset_server plugin.'
-Rake::TestTask.new(:test) do |t|
-  t.libs << 'lib'
-  t.libs << 'test'
+Rake::TestTask.new do |t|
   t.pattern = 'test/**/*_test.rb'
-  t.verbose = true
 end
